@@ -13,18 +13,13 @@ const service = axios.create({
 // request interceptor
 service.interceptors.request.use(
   config => {
-    // do something before request is sent
-
+    // 如果存在 token 则附带在 http header 中
     if (store.getters.token) {
-      // let each request carry token
-      // ['X-Token'] is a custom headers key
-      // please modify it according to the actual situation
-      config.headers['X-Token'] = getToken()
+      config.headers['Authorization'] = `Bearer ${getToken()}`
     }
     return config
   },
   error => {
-    // do something with request error
     console.log(error) // for debug
     return Promise.reject(error)
   }
@@ -46,16 +41,17 @@ service.interceptors.response.use(
     const res = response.data
 
     // if the custom code is not 20000, it is judged as an error.
-    if (res.code !== 20000) {
+    if (res.code !== 0) {
+      console.log(res)
       Message({
-        message: res.message || 'Error',
+        message: res.msg || '请求失败',
         type: 'error',
         duration: 5 * 1000
       })
 
-      // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
-      if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
-        // to re-login
+      // 判断 token 失效的场景
+      if (res.code === -2) {
+        // 如果 token 失效，则弹出确认对话框，用户点击后，清空 token 并返回登录页面
         MessageBox.confirm('Token已失效，是否重新登陆', '确认登出', {
           confirmButtonText: '重新登录',
           cancelButtonText: '取消',
@@ -66,15 +62,15 @@ service.interceptors.response.use(
           })
         })
       }
-      return Promise.reject(new Error(res.message || 'Error'))
+      return Promise.reject(new Error(res.msg || '请求失败'))
     } else {
       return res
     }
   },
   error => {
-    console.log('err' + error) // for debug
+    const { msg } = error.response.data
     Message({
-      message: error.message,
+      message: msg || '请求失败',
       type: 'error',
       duration: 5 * 1000
     })
