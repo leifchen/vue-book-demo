@@ -162,7 +162,7 @@
             <el-row>
               <el-col :span="24">
                 <el-form-item
-                  label-width="60px"
+                  :label-width="labelWidth"
                   label="封面："
                 >
                   <a
@@ -182,7 +182,7 @@
             <el-row>
               <el-col :span="24">
                 <el-form-item
-                  label-width="60px"
+                  :label-width="labelWidth"
                   label="目录："
                 >
                   <div
@@ -230,8 +230,10 @@ export default {
   name: 'Detail',
   components: { Sticky, Warning, EbookUpload, MDinput },
   props: {
-    isEdit: Boolean,
-    default: false
+    isEdit: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {
@@ -251,11 +253,56 @@ export default {
     showGuide() {
       console.log('show guide...')
     },
-    onUploadSuccess() {
-      console.log('onUploadSuccess')
+    onUploadSuccess(data) {
+      this.setData(data)
     },
     onUploadRemove() {
-      console.log('onUploadRemove')
+      this.toDefault()
+    },
+    onContentClick(data) {
+      if (data.text) {
+        window.open(data.text)
+      }
+    },
+    setData(data) {
+      const {
+        title,
+        author,
+        publisher,
+        language,
+        rootFile,
+        cover,
+        originalName,
+        url,
+        contents,
+        contentsTree,
+        fileName,
+        coverPath,
+        filePath,
+        unzipPath
+      } = data
+      this.postForm = {
+        title,
+        author,
+        publisher,
+        language,
+        rootFile,
+        cover,
+        url,
+        originalName,
+        contents,
+        fileName,
+        coverPath,
+        filePath,
+        unzipPath
+      }
+      this.fileList = [{ name: originalName, url }]
+      this.contentsTree = contentsTree
+    },
+    toDefault() {
+      this.postForm = Object.assign({}, defaultForm)
+      this.fileList = []
+      this.contentsTree = []
     }
   }
 }
