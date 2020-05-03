@@ -1,6 +1,6 @@
 const mysql = require('mysql')
 const config = require('./config')
-const { debug } = require('../utils/constant').debug
+const { debug } = require('../utils/constant')
 const { isObject } = require('../utils')
 
 function connect() {
@@ -20,10 +20,8 @@ function querySql(sql) {
     try {
       conn.query(sql, (err, results) => {
         if (err) {
-          debug && console.log('查询失败，原因:' + JSON.stringify(err))
           reject(err)
         } else {
-          debug && console.log('查询成功', JSON.stringify(results))
           resolve(results)
         }
       })
@@ -91,8 +89,43 @@ function insert(model, tableName) {
   })
 }
 
+function update(model, tableName, where) {
+  return new Promise((resolve, reject) => {
+    if (!isObject(model)) {
+      reject(new Error('插入数据库失败，插入数据非对象'))
+    } else {
+      const entry = []
+      Object.keys(model).forEach(key => {
+        if (model.hasOwnProperty(key)) {
+          entry.push(`\`${key}\`='${model[key]}'`)
+        }
+      })
+      if (entry.length > 0) {
+        let sql = `UPDATE \`${tableName}\` SET`
+        sql = `${sql} ${entry.join(',')} ${where}`
+        debug && console.log(sql)
+        const conn = connect()
+        try {
+          conn.query(sql, (err, result) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(result)
+            }
+          })
+        } catch (e) {
+          reject(e)
+        } finally {
+          conn.end()
+        }
+      }
+    }
+  })
+}
+
 module.exports = {
   querySql,
   queryOne,
-  insert
+  insert,
+  update
 }

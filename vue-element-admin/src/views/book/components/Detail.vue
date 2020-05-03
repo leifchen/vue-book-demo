@@ -196,7 +196,7 @@
                   label="目录："
                 >
                   <div
-                    v-if="postForm.contents && postForm.contents.length > 0"
+                    v-if="contentsTree && contentsTree.length > 0"
                     class="contents-wrapper"
                   >
                     <el-tree
@@ -220,7 +220,7 @@ import Sticky from '@/components/Sticky'
 import Warning from './Warning'
 import EbookUpload from '@/components/Upload/EbookUpload'
 import MDinput from '@/components/MDinput'
-import { createBook } from '@/api/book'
+import { createBook, updateBook, getBook } from '@/api/book'
 
 const defaultForm = {
   title: '', // 书名
@@ -271,8 +271,24 @@ export default {
       }
     }
   },
+  created() {
+    if (this.isEdit) {
+      const fileName = this.$route.params.fileName
+      this.getBookData(fileName)
+    }
+  },
   methods: {
     submitForm() {
+      const onSuccess = (response) => {
+        const { msg } = response
+        this.$notify({
+          title: '操作成功',
+          message: msg,
+          type: 'success',
+          duration: 2000
+        })
+        this.loading = false
+      }
       this.$refs.postForm.validate(valid => {
         if (valid) {
           this.loading = true
@@ -281,21 +297,20 @@ export default {
           if (!this.isEdit) {
             createBook(book)
               .then(response => {
-                console.log('createBook', response)
-                this.loading = false
-                this.$notify({
-                  title: '成功',
-                  message: response.msg,
-                  type: 'success',
-                  duration: 2000
-                })
+                onSuccess(response)
                 this.toDefault()
               })
               .catch(() => {
                 this.loading = false
               })
           } else {
-            console.log('updateBook')
+            updateBook(book)
+              .then(response => {
+                onSuccess(response)
+              })
+              .catch(() => {
+                this.loading = false
+              })
           }
         } else {
           return false
@@ -348,13 +363,18 @@ export default {
         filePath,
         unzipPath
       }
-      this.fileList = [{ name: originalName, url }]
+      this.fileList = [{ name: originalName || fileName, url }]
       this.contentsTree = contentsTree
     },
     toDefault() {
       this.$refs.postForm.resetFields()
       this.fileList = []
       this.contentsTree = []
+    },
+    getBookData(fileName) {
+      getBook(fileName).then(res => {
+        this.setData(res.data)
+      })
     }
   }
 }

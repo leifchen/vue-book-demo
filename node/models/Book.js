@@ -236,16 +236,7 @@ class Book {
                 chapter.order = index + 1
                 chapters.push(chapter)
               })
-              const chapterTree = []
-              chapters.forEach(c => {
-                c.children = []
-                if (c.pid === '') {
-                  chapterTree.push(c)
-                } else {
-                  const parent = chapters.find(_ => _.navId === c.pid)
-                  parent.children.push(c)
-                }
-              }) // 将目录转化为树状结构
+              const chapterTree = Book.getContentsTree(chapters)
               resolve({ chapters, chapterTree })
             } else {
               reject(new Error('目录解析失败，navMap.navPoint error'))
@@ -353,6 +344,23 @@ class Book {
       } else {
         return null
       }
+    }
+  }
+
+  static getContentsTree (contents) {
+    if (contents) {
+      const contentsTree = []
+      // 将目录转化为树状结构
+      contents.forEach(c => {
+        c.children = []
+        if (c.pid === '') {
+          contentsTree.push(c)
+        } else {
+          const parent = contents.find(_ => _.navId === c.pid)
+          parent.children.push(c)
+        }
+      }) 
+      return contentsTree
     }
   }
 }

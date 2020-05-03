@@ -24,12 +24,61 @@ function insertBook (book) {
   })
 }
 
-function exists (book) {
-
+function updateBook (book) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (book instanceof Book) {
+        const result = await getBook(book.fileName)
+        if (result) {
+          const model = book.toDb()
+          if (result.updateType === 0) {
+            reject(new Error('内置图书不能编辑'))
+          } else {
+            await db.update(model, 'book', `where fileName='${book.fileName}'`)
+            resolve()
+          }
+        }
+      } else {
+        reject(new Error('添加的图书对象不合法'))
+      }
+    } catch (e) {
+      reject(e)
+    }
+  })
 }
 
-function removeBook (book) {
+function getBook (fileName) {
+  return new Promise(async (resolve, reject) => {
+    const bookSql = `select * from book where fileName='${fileName}'`
+    const contentsSql = `select * from contents where fileName='${fileName}' order by \`order\``
+    const book = await db.queryOne(bookSql)
+    const contents = await db.querySql(contentsSql)
+    if (book) {
+      book.cover = Book.genCoverUrl(book)
+      book.contentsTree = Book.getContentsTree(contents)
+      resolve(book)
+    } else {
+      reject(new Error('电子书不存在'))
+    }
+  })
+}
 
+function exists (book) {
+  const { title, author, publisher } = book
+  const sql = `select * from book where title='${title}' and author='${author}' and publisher='${publisher}'`
+  return db.queryOne(sql)
+}
+
+async function removeBook (book) {
+  if (book) {
+    book.reset()
+    if (book.fileName) {
+      const removeBookSql = `delete from book where fileName='${book.fileName}'`
+      const removeContentsSql = `delete from contents where fileName='${book.fileName}'`
+      await db.querySql(removeBookSql)
+      await db.querySql(removeContentsSql)
+    }
+  }
 }
 
 async function insertContents (book) {
@@ -45,6 +94,7 @@ async function insertContents (book) {
         'fileName',
         'id',
         'href',
+        'text',
         'order',
         'level',
         'label',
@@ -57,5 +107,7 @@ async function insertContents (book) {
 }
 
 module.exports = {
-  insertBook
+  insertBook,
+  updateBook,
+  getBook
 }
