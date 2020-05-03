@@ -72,6 +72,8 @@ class Book {
     this.createDt = new Date().getTime()
     this.updateDt = new Date().getTime()
     this.updateType = data.updateType === 0 ? data.updateType : UPDATE_TYPE_FROM_WEB
+    this.category = data.category || 99
+    this.categoryText = data.categoryText || '自定义'
     this.contents = data.contents
   }
 
@@ -207,6 +209,7 @@ class Book {
         const xml = fs.readFileSync(ncxFilePath, 'utf-8') // 读取ncx文件
         const dir = path.dirname(ncxFilePath).replace(UPLOAD_PATH, '')
         const fileName = this.fileName
+        const unzipPath = this.unzipPath
         // 将ncx文件从xml转为json
         xml2js(xml, {
           explicitArray: false, // 设置为false时，解析结果不会包裹array
@@ -224,6 +227,8 @@ class Book {
                   return
                 }
                 const src = chapter.content['$'].src
+                chapter.id = `${src}`
+                chapter.href = `${dir}/${src}`.replace(unzipPath, '')
                 chapter.text = `${UPLOAD_URL}/${dir}/${src}` // 生成章节的URL
                 chapter.label = chapter.navLabel.text || '' // 从ncx文件中解析出目录的标题
                 chapter.navId = chapter['$'].id
@@ -267,7 +272,6 @@ class Book {
       unzipUrl: this.unzipUrl,
       category: this.category,
       categoryText: this.categoryText,
-      contents: this.contents,
       contentsTree: this.contentsTree,
       originalName: this.originalName,
       rootFile: this.rootFile,
@@ -294,8 +298,9 @@ class Book {
       createUser: this.createUser,
       createDt: this.createDt,
       updateDt: this.updateDt,
-      category: this.category || 99,
-      categoryText: this.categoryText || '自定义'
+      updateType: this.updateType,
+      category: this.category,
+      categoryText: this.categoryText
     }
   }
 
