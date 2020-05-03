@@ -2,6 +2,7 @@
   <el-form
     ref="postForm"
     :model="postForm"
+    :rules="rules"
     class="detail"
   >
     <sticky
@@ -53,6 +54,7 @@
                 class="form-item-author"
               >
                 <el-form-item
+                  prop="author"
                   :label-width="labelWidth"
                   label="作者："
                 >
@@ -65,6 +67,7 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item
+                  prop="publisher"
                   :label-width="labelWidth"
                   label="出版社："
                 >
@@ -79,6 +82,7 @@
             <el-row>
               <el-col :span="12">
                 <el-form-item
+                  prop="language"
                   :label-width="labelWidth"
                   label="语言："
                 >
@@ -91,6 +95,7 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item
+                  prop="rootFile"
                   :label-width="labelWidth"
                   label="根文件："
                 >
@@ -106,6 +111,7 @@
             <el-row>
               <el-col :span="12">
                 <el-form-item
+                  prop="filePath"
                   :label-width="labelWidth"
                   label="文件路径："
                 >
@@ -119,6 +125,7 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item
+                  prop="unzipPath"
                   :label-width="labelWidth"
                   label="解压路径："
                 >
@@ -134,6 +141,7 @@
             <el-row>
               <el-col :span="12">
                 <el-form-item
+                  prop="coverPath"
                   :label-width="labelWidth"
                   label="封面路径："
                 >
@@ -147,6 +155,7 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item
+                  prop="fileName"
                   :label-width="labelWidth"
                   label="文件名称："
                 >
@@ -162,6 +171,7 @@
             <el-row>
               <el-col :span="24">
                 <el-form-item
+                  prop="cover"
                   :label-width="labelWidth"
                   label="封面："
                 >
@@ -210,6 +220,7 @@ import Sticky from '@/components/Sticky'
 import Warning from './Warning'
 import EbookUpload from '@/components/Upload/EbookUpload'
 import MDinput from '@/components/MDinput'
+import { createBook } from '@/api/book'
 
 const defaultForm = {
   title: '', // 书名
@@ -236,19 +247,60 @@ export default {
     }
   },
   data() {
+    const validateRequire = (rule, value, callback) => {
+      if (value === '') {
+        this.$message({
+          message: rule.field + '为必传项',
+          type: 'error'
+        })
+        callback(new Error(rule.field + '为必传项'))
+      } else {
+        callback()
+      }
+    }
     return {
       loading: false,
       postForm: Object.assign({}, defaultForm),
       fileList: [],
-      labelWidth: '120px'
+      labelWidth: '120px',
+      contentsTree: [],
+      rules: {
+        image_uri: [{ validator: validateRequire }],
+        title: [{ validator: validateRequire }],
+        content: [{ validator: validateRequire }]
+      }
     }
   },
   methods: {
     submitForm() {
-      this.loading = true
-      setTimeout(() => {
-        this.loading = false
-      }, 200)
+      this.$refs.postForm.validate(valid => {
+        if (valid) {
+          this.loading = true
+          const book = Object.assign({}, this.postForm)
+          delete book.contentsTree
+          if (!this.isEdit) {
+            createBook(book)
+              .then(response => {
+                console.log('createBook', response)
+                this.loading = false
+                this.$notify({
+                  title: '成功',
+                  message: response.msg,
+                  type: 'success',
+                  duration: 2000
+                })
+                this.toDefault()
+              })
+              .catch(() => {
+                this.loading = false
+              })
+          } else {
+            console.log('updateBook')
+          }
+        } else {
+          return false
+        }
+      })
     },
     showGuide() {
       console.log('show guide...')
@@ -300,7 +352,7 @@ export default {
       this.contentsTree = contentsTree
     },
     toDefault() {
-      this.postForm = Object.assign({}, defaultForm)
+      this.$refs.postForm.resetFields()
       this.fileList = []
       this.contentsTree = []
     }
