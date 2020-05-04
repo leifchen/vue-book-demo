@@ -86,4 +86,48 @@ router.get(
   }
 )
 
+router.get(
+  '/category',
+  function (req, res, next) {
+    bookService.getCategory()
+      .then(category => {
+        new Result(category, '获取分类成功').success(res)
+      })
+      .catch(err => {
+        next(boom.badImplementation(err))
+      })
+  }
+)
+
+router.get(
+  '/list',
+  function (req, res, next) {
+    bookService.listBook(req.query)
+      .then(({ list, count, page, pageSize }) => {
+        new Result({ list, count, page: +page, pageSize: +pageSize }, '获取图书列表成功').success(res)
+      })
+      .catch(err => {
+        next(boom.badImplementation(err))
+      })
+  }
+)
+
+router.get(
+  '/delete',
+  function (req, res, next) {
+    const { fileName } = req.query
+    if (!fileName) {
+      next(boom.badRequest(new Error('参数fileName不能为空')))
+    } else {
+      bookService.deleteBook(fileName)
+        .then(book => {
+          new Result('删除图书成功').success(res)
+        })
+        .catch(err => {
+          next(boom.badImplementation(err))
+        })
+    }
+  }
+)
+
 module.exports = router  
