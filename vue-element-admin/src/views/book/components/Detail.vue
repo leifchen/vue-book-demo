@@ -243,7 +243,6 @@ const defaultForm = {
 export default {
   name: 'Detail',
   components: { Sticky, Warning, EbookUpload, MDinput },
-  // directives: { steps },
   props: {
     isEdit: {
       type: Boolean,
