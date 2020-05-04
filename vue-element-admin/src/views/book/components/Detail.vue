@@ -221,6 +221,9 @@ import Warning from './Warning'
 import EbookUpload from '@/components/Upload/EbookUpload'
 import MDinput from '@/components/MDinput'
 import { createBook, updateBook, getBook } from '@/api/book'
+import Driver from 'driver.js'
+import 'driver.js/dist/driver.min.css'
+import steps from '@/utils/steps'
 
 const defaultForm = {
   title: '', // 书名
@@ -240,6 +243,7 @@ const defaultForm = {
 export default {
   name: 'Detail',
   components: { Sticky, Warning, EbookUpload, MDinput },
+  // directives: { steps },
   props: {
     isEdit: {
       type: Boolean,
@@ -276,6 +280,14 @@ export default {
       const fileName = this.$route.params.fileName
       this.getBookData(fileName)
     }
+  },
+  mounted() {
+    this.driver = new Driver({
+      nextBtnText: '下一个',
+      prevBtnText: '上一个',
+      closeBtnText: '关闭',
+      doneBtnText: '完成'
+    })
   },
   methods: {
     submitForm() {
@@ -318,7 +330,8 @@ export default {
       })
     },
     showGuide() {
-      console.log('show guide...')
+      this.driver.defineSteps(steps)
+      this.driver.start()
     },
     onUploadSuccess(data) {
       this.setData(data)
